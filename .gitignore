@@ -4,4 +4,5 @@
 boot_out.txt
 .fseventsd
 lib
+.vscode
 
