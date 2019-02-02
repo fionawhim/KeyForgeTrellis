@@ -37,6 +37,8 @@ class PlayerKeyUi:
       )
     ]
 
+    self.update_strips(None)
+
   def render(self, t = time.monotonic()):
     for strip in self.strips:
       strip.render(t)
