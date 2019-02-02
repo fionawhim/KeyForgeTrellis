@@ -76,6 +76,9 @@ class PlayerChainsUi:
       value = 0,
     )
 
+    print("chains palette_step", self.strip.palette_step)
+
+ 
     self.update_strip()
 
   def render(self, t): 

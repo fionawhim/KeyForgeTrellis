@@ -16,6 +16,17 @@ INCREASE_STRIP_COLORS = [
   fancy.CHSV(0, 0.25, 0.25),
 ]
 
+BLUE_WITH_WHITE_HIGHLIGHT_PALETTE = [
+  fancy.CHSV(4/6.0, 0.7, 1.0),
+  fancy.CHSV(4/6.0, 0.7, 1.0),
+  fancy.CHSV(4/6.0, 0.7, 1.0),
+  fancy.CHSV(4/6.0, 0.7, 1.0),
+  fancy.CHSV(4/6.0, 0.7, 1.0),
+  fancy.CHSV(4/6.0, 0.7, 1.0),
+  fancy.CHSV(4/6.0, 0.7, 1.0),
+  fancy.CHSV(4/6.0, 0.0, 1.0),
+]
+
 class ChainsUi:
   def __init__(self, trellis, app, player):
     self.app = app
@@ -32,17 +43,10 @@ class ChainsUi:
       pixels = trellis.pixels,
       x_range = player_x,
       y_range = range(0, 4),
-      colors = [
-        fancy.CHSV(4/6.0, 0.7, 1.0),
-        fancy.CHSV(4/6.0, 0, 0),
-        fancy.CHSV(4/6.0, 0, 0),
-        fancy.CHSV(4/6.0, 0, 0),
-        fancy.CHSV(4/6.0, 0, 0),
-        fancy.CHSV(4/6.0, 0, 0),
-      ],
+      colors = BLUE_WITH_WHITE_HIGHLIGHT_PALETTE,
       value = 4,
       brightness = 0.6,
-      palette_shift_speed = -3,
+      palette_shift_speed = -2,
       palette_range = 0.2,
     )
 
@@ -53,7 +57,7 @@ class ChainsUi:
       colors = DECREASE_STRIP_COLORS,
       value = 2,
       brightness = 1.0,
-      palette_shift_speed = 0.3,
+      # palette_shift_speed = 0.3,
       palette_range = 0.25
     )
 
@@ -64,7 +68,7 @@ class ChainsUi:
       colors = INCREASE_STRIP_COLORS,
       value = 2,
       brightness = 1.0,
-      palette_shift_speed = 0.3,
+      # palette_shift_speed = 0.3,
       palette_range = -0.25
     )
 
@@ -75,25 +79,26 @@ class ChainsUi:
       colors = palettes.CHAINS, 
       brightness = 0.8,
       speed = 0.02,
-      value = 0,
+      value = -1,
+      background_color = fancy.CHSV(0, 0, 0.2),
     )
 
     self.strips = [
       self.player_strip,
       self.chain_strip,
-      self.decrease_strip,
-      self.increase_strip,
+      # self.decrease_strip,
+      # self.increase_strip,
     ]
 
     self.start_t = time.monotonic()
   
   def render(self, t): 
-    if t > self.start_t + 2:
-      self.increase_strip.palette_shift_speed = None
-      self.decrease_strip.palette_shift_speed = None
+    # if t > self.start_t + 2:
+    #   self.increase_strip.palette_shift_speed = None
+    #   self.decrease_strip.palette_shift_speed = None
 
-      self.increase_strip.set_value(3, t)
-      self.decrease_strip.set_value(3, t)
+    #   self.increase_strip.set_value(3, t)
+    #   self.decrease_strip.set_value(3, t)
     # else:
     #   self.increase_strip.palette_shift_speed = self.increase_strip.palette_shift_speed * 1.05
     #   self.decrease_strip.palette_shift_speed = self.decrease_strip.palette_shift_speed * 1.05
@@ -111,7 +116,10 @@ class ChainsUi:
     for key in keys:
       (x, y) = key
       if x in range(1, 7):
-        self.player.chains = x + y * 6
+        new_chains = x + y * 6
+        if new_chains == 1 and self.player.chains == 1:
+          new_chains = 0
+        self.player.chains = new_chains
         self.update_strip(t)
       elif x == close_x:
         self.app.switch_ui('main')
@@ -125,7 +133,6 @@ class ChainsUi:
 
   def set_player(self, player):
     self.player = player
-
 
   def update_strip(self, t = None):
     self.chain_strip.set_value(self.player.chains, t)

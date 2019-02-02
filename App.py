@@ -11,7 +11,8 @@ class App:
       Player('right'),
     ]
 
-    self.switch_ui('chains', self.players[1])
+    self.switch_ui('main')
+    # self.switch_ui('chains', self.players[1])
 
   def render(self, t):
     self.current_ui.render(t)

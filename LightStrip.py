@@ -10,12 +10,14 @@ class LightStrip:
       brightness = BRIGHTNESS,
       palette_shift_speed = None,
       palette_range = 1.0,
+      background_color = fancy.CRGB(0, 0, 0),
       t = time.monotonic()):
     self.pixels = pixels
     self.speed = speed
     self.palette_shift_speed = palette_shift_speed
     self.palette_range = palette_range
     self.colors = colors if type(colors) is list else [colors]
+    self.background_color = background_color
 
     self.set_position(x_range, y_range)
 
@@ -32,9 +34,17 @@ class LightStrip:
     if y_range != None:
       self.y_pos = list(y_range)
 
+
     self.max_val = (abs(self.x_pos[-1] - self.x_pos[0]) + 1) * (abs(self.y_pos[-1] - self.y_pos[0]) + 1)
     self.max_time = self.speed * self.max_val
-    self.palette_step = 1.0 / self.max_val * self.palette_range
+
+    # Compensates for the last 'fence' of the color palette range going back to 0.
+    # e.g. in a 4-color palette, 0 -> 0.25 -> 0.5 -> 0.75 -> 1.0
+    # We want to render the palette so that value 1 is color 0 and max value is 0.75.
+    max_color = (len(self.colors) - 1.0) / len(self.colors)
+
+    # This will be multiplied by value - 1.
+    self.palette_step = max_color / (self.max_val - 1) * self.palette_range
 
   
   def set_value(self, value, t = None):
@@ -67,7 +77,7 @@ class LightStrip:
     for y in self.y_pos:
       for x in self.x_pos:
         if i > self.rendered_value:
-          c = fancy.CRGB(0, 0, 0)
+          c = self.background_color
         else:
           c_idx = (i - 1) * self.palette_step + palette_animation_offset
           c = fancy.palette_lookup(self.colors, c_idx)
