@@ -1,18 +1,7 @@
 import time
-import adafruit_fancyled.adafruit_fancyled as fancy
 
+import palettes
 from LightStrip import LightStrip
-
-RED_KEY_PALETTE = [fancy.CHSV(1.0, 0.5, 0.5), fancy.CHSV(1.0)]
-YELLOW_KEY_PALETTE = [fancy.CHSV(1.0 / 6.0, 0.5, 0.5), fancy.CHSV(1.0 / 6.0)]
-BLUE_KEY_PALETTE = [fancy.CHSV(0.6, 0.5, 0.5), fancy.CHSV(0.6)]
-
-CHAINS_PALETTE = [
-  fancy.CRGB(96, 149, 64),
-  fancy.CRGB(234,209,83),
-  fancy.CRGB(243,169,87),
-  fancy.CRGB(178,31,31),
-]
 
 SIDE_LEFT = 'left'
 SIDE_RIGHT = 'right'
@@ -29,21 +18,21 @@ class PlayerKeyUi:
         pixels = trellis.pixels,
         x_range = x_range,
         y_range = range(1),
-        colors = RED_KEY_PALETTE,
+        colors = palettes.RED_KEY,
         value = 1,
       ),
       LightStrip(
         pixels = trellis.pixels,
         x_range = x_range,
         y_range = range(1, 2),
-        colors = YELLOW_KEY_PALETTE,
+        colors = palettes.YELLOW_KEY,
         value = 1,  
       ),
       LightStrip(
         pixels = trellis.pixels,
         x_range = x_range,
         y_range = range(2, 3),
-        colors = BLUE_KEY_PALETTE,
+        colors = palettes.BLUE_KEY,
         value = 1,
       )
     ]
@@ -86,7 +75,7 @@ class PlayerChainsUi:
       pixels = trellis.pixels,
       x_range = x_range,
       y_range = range(3, 4),
-      colors = CHAINS_PALETTE,
+      colors = palettes.CHAINS,
       value = 0,
     )
 

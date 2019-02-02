@@ -1,5 +1,6 @@
 from MainUi import MainUi
 from Player import Player
+from ChainsUi import ChainsUi
 
 class App:
   def __init__(self, trellis):
@@ -9,7 +10,9 @@ class App:
     ]
 
     self.main_ui = MainUi(trellis, self)
-    self.current_ui = self.main_ui
+    self.chains_ui = ChainsUi(trellis, self)
+    self.current_ui = self.chains_ui
+    self.chains_ui.set_player(self.players[0])
 
   def render(self, t):
     self.current_ui.render(t)
