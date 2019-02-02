@@ -59,21 +59,18 @@ class PlayerKeyUi:
         strip.set_value(1, t)
 
 class PlayerChainsUi:
-  def __init__(self, trellis, player):
+  def __init__(self, trellis, app, player):
+    self.app = app
     self.player = player
 
     if player.side == SIDE_LEFT:
-      x_range = range(4)
-      self.down_x = 0
-      self.up_x = 3
+      self.x_range = range(4)
     else:
-      x_range = range(7, 3, -1)
-      self.down_x = 7
-      self.up_x = 4
+      self.x_range = range(7, 3, -1)
 
     self.strip = LightStrip(
       pixels = trellis.pixels,
-      x_range = x_range,
+      x_range = self.x_range,
       y_range = range(3, 4),
       colors = palettes.CHAINS,
       value = 0,
@@ -87,13 +84,8 @@ class PlayerChainsUi:
   def handle_keys(self, t, pressed):
     for key in pressed:
       (x, y) = key
-      if y == 3:
-        if x == self.down_x:
-          self.player.decrease_chains()
-        elif x == self.up_x:
-          self.player.increase_chains()
-        
-        self.update_strip(t)
+      if y == 3 and x in self.x_range:
+        self.app.switch_ui('chains', self.player)
 
   def update_strip(self, t = None):
     if self.player.chains == 0:
@@ -110,11 +102,12 @@ class PlayerChainsUi:
 
 class MainUi:
   def __init__(self, trellis, app):
+    self.app = app
     self.children = []
 
     for p in app.players:
       self.children.append(PlayerKeyUi(trellis, p))
-      self.children.append(PlayerChainsUi(trellis, p))
+      self.children.append(PlayerChainsUi(trellis, app, p))
   
   def render(self, t = time.monotonic()):
     for p in self.children:

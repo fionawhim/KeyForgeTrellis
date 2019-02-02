@@ -18,6 +18,7 @@ INCREASE_STRIP_COLORS = [
 
 class ChainsUi:
   def __init__(self, trellis, app, player):
+    self.app = app
     self.player = player
 
     if player.side == 'left':
@@ -93,9 +94,9 @@ class ChainsUi:
 
       self.increase_strip.set_value(3, t)
       self.decrease_strip.set_value(3, t)
-    else:
-      self.increase_strip.palette_shift_speed = self.increase_strip.palette_shift_speed * 1.05
-      self.decrease_strip.palette_shift_speed = self.decrease_strip.palette_shift_speed * 1.05
+    # else:
+    #   self.increase_strip.palette_shift_speed = self.increase_strip.palette_shift_speed * 1.05
+    #   self.decrease_strip.palette_shift_speed = self.decrease_strip.palette_shift_speed * 1.05
 
     for strip in self.strips:
       strip.render(t)
