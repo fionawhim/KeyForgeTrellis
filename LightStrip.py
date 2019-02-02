@@ -16,9 +16,7 @@ class LightStrip:
     self.max_val = (abs(self.x_pos[-1] - self.x_pos[0]) + 1) * (abs(self.y_pos[-1] - self.y_pos[0]) + 1)
     self.max_time = speed * self.max_val
 
-    color_count = len(self.colors)
-    palette_linearizer = (color_count - 1) / color_count if color_count > 1 else 1
-    self.palette_step = 1.0 / self.max_val * palette_linearizer
+    self.palette_step = 1.0 / self.max_val
 
     self.speed = speed
 
@@ -27,7 +25,8 @@ class LightStrip:
     self.last_value = value
     self.last_value_t = t
   
-  def set_value(self, value, t = time.monotonic()):
+  def set_value(self, value, t = None):
+    t = time.monotonic() if t == None else t
     self.last_value = self.rendered_value
     self.value = value
     self.last_value_t = t 
@@ -52,7 +51,8 @@ class LightStrip:
         if i > self.rendered_value:
           c = fancy.CRGB(0, 0, 0)
         else:
-          c = fancy.palette_lookup(self.colors, i * self.palette_step)
+          c = fancy.palette_lookup(self.colors, (i - 1) * self.palette_step)
         self.pixels[x, y] = fancy.gamma_adjust(c, brightness = BRIGHTNESS).pack()
+
         i = i + 1
 

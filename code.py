@@ -2,12 +2,12 @@ import time
 import adafruit_trellism4
 import adafruit_fancyled.adafruit_fancyled as fancy
 
-from MainUi import MainUi
+from App import App
 
 trellis = adafruit_trellism4.TrellisM4Express()
 trellis.pixels.auto_write = False
 
-main_ui = MainUi(trellis)
+app = App(trellis)
 
 last_pressed = set()
 last_pressed_t = 0
@@ -24,12 +24,12 @@ while True:
   if t >= last_pressed_t + KEY_CHECK_INTERVAL:
     pressed = set(trellis.pressed_keys)
 
-    main_ui.handle_keys(t, pressed - last_pressed)
+    app.handle_keys(t, pressed - last_pressed)
 
     last_pressed = pressed
     last_pressed_t = t
 
-  main_ui.render(t)
+  app.render(t)
   trellis.pixels.show()
 
   t_diff = time.monotonic() - t
