@@ -14,7 +14,6 @@ class LightStrip:
     self.y_pos = list(y_range)
 
     self.max_val = (abs(self.x_pos[-1] - self.x_pos[0]) + 1) * (abs(self.y_pos[-1] - self.y_pos[0]) + 1)
-    print(self.max_val)
     self.max_time = speed * self.max_val
 
     color_count = len(self.colors)

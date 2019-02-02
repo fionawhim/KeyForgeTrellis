@@ -11,61 +11,73 @@ RED_KEY_PALETTE = [fancy.CHSV(1.0, 0.5, 0.5), fancy.CHSV(1.0)]
 YELLOW_KEY_PALETTE = [fancy.CHSV(1.0 / 6.0, 0.5, 0.5), fancy.CHSV(1.0 / 6.0)]
 BLUE_KEY_PALETTE = [fancy.CHSV(0.6, 0.5, 0.5), fancy.CHSV(0.6)]
 
+STATE_KEYS = 2
+STATE_CHAINS = 3
 
+SIDE_LEFT = 'left'
+SIDE_RIGHT = 'right'
 
-# class MainUi:
-#   __init__(self):
+class PlayerKeyUi:
+  def __init__(self, side):
+    x_range = range(4) if side == SIDE_LEFT else range(7, 3, -1)
+    self.key_x = 0 if side == SIDE_LEFT else 7
 
-#     return
+    self.strips = [
+      LightStrip(
+        pixels = trellis.pixels,
+        x_range = x_range,
+        y_range = range(1),
+        colors = RED_KEY_PALETTE,
+        value = 1,
+      ),
+      LightStrip(
+        pixels = trellis.pixels,
+        x_range = x_range,
+        y_range = range(1, 2),
+        colors = YELLOW_KEY_PALETTE,
+        value = 1,  
+      ),
+      LightStrip(
+        pixels = trellis.pixels,
+        x_range = x_range,
+        y_range = range(2, 3),
+        colors = BLUE_KEY_PALETTE,
+        value = 1,
+      )
+    ]
 
+  def render(self, t = time.monotonic()):
+    for strip in self.strips:
+      strip.render(t)
 
-STRIP_1 = LightStrip(
-  pixels = trellis.pixels,
-  x_range = range(4),
-  y_range = range(1),
-  colors = RED_KEY_PALETTE,
-  value = 1,
-)
+  def handle_keys(self, t, pressed): 
+    for key in pressed:
+      (x, y) = key
+      if x == self.key_x and y < len(self.strips):
+        self.toggle_strip(self.strips[y], t)
 
-STRIP_4 = LightStrip(
-  pixels = trellis.pixels,
-  x_range = range(7, 3, -1),
-  y_range = range(1),
-  colors = RED_KEY_PALETTE,
-  value = 1,
-)
+  def toggle_strip(self, strip, t):
+    if strip.value == 1:
+      strip.set_value(4, t)
+    else:
+      strip.set_value(1, t)
 
-STRIP_2 = LightStrip(
-  pixels = trellis.pixels,
-  x_range = range(4),
-  y_range = range(1, 2),
-  colors = YELLOW_KEY_PALETTE,
-  value = 1,  
-)
+class MainUi:
+  def __init__(self):
+    self.player_keys = [
+      PlayerKeyUi(SIDE_LEFT),
+      PlayerKeyUi(SIDE_RIGHT),
+    ]
+  
+  def render(self, t = time.monotonic()):
+    for p in self.player_keys:
+      p.render(t)
 
-STRIP_5 = LightStrip(
-  pixels = trellis.pixels,
-  x_range = range(7, 3, -1),
-  y_range = range(1, 2),
-  colors = YELLOW_KEY_PALETTE,
-  value = 1,
-)
+  def handle_keys(self, t, pressed):
+    for p in self.player_keys:
+      p.handle_keys(t, pressed)
 
-STRIP_3 = LightStrip(
-  pixels = trellis.pixels,
-  x_range = range(4),
-  y_range = range(2, 3),
-  colors = BLUE_KEY_PALETTE,
-  value = 1,
-)
-
-STRIP_6 = LightStrip(
-  pixels = trellis.pixels,
-  x_range = range(7, 3, -1),
-  y_range = range(2, 3),
-  colors = BLUE_KEY_PALETTE,
-  value = 1,
-)
+main_ui = MainUi()
 
 last_pressed = set()
 last_pressed_t = 0
@@ -82,47 +94,12 @@ while True:
   if t >= last_pressed_t + KEY_CHECK_INTERVAL:
     pressed = set(trellis.pressed_keys)
 
-    for press in pressed - last_pressed:
-      if press == (0, 0):
-        if STRIP_1.value == 1:
-          STRIP_1.set_value(4, t)
-        else:
-          STRIP_1.set_value(1, t)
-      if press == (0, 1):
-        if STRIP_2.value == 1:
-          STRIP_2.set_value(4, t)
-        else:
-          STRIP_2.set_value(1, t)
-      if press == (0, 2):
-        if STRIP_3.value == 1:
-          STRIP_3.set_value(4, t)
-        else:
-          STRIP_3.set_value(1, t)
-      if press == (7, 0):
-        if STRIP_4.value == 1:
-          STRIP_4.set_value(4, t)
-        else:
-          STRIP_4.set_value(1, t)
-      if press == (7, 1):
-        if STRIP_5.value == 1:
-          STRIP_5.set_value(4, t)
-        else:
-          STRIP_5.set_value(1, t)
-      if press == (7, 2):
-        if STRIP_6.value == 1:
-          STRIP_6.set_value(4, t)
-        else:
-          STRIP_6.set_value(1, t)
+    main_ui.handle_keys(t, pressed - last_pressed)
 
     last_pressed = pressed
     last_pressed_t = t
 
-  STRIP_1.render(t)
-  STRIP_2.render(t)
-  STRIP_3.render(t)
-  STRIP_4.render(t)
-  STRIP_5.render(t)
-  STRIP_6.render(t)
+  main_ui.render(t)
   trellis.pixels.show()
 
   t_diff = time.monotonic() - t
