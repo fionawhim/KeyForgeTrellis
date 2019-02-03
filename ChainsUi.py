@@ -47,7 +47,7 @@ class ChainsUi:
       value = 4,
       brightness = 0.6,
       palette_shift_speed = -2,
-      palette_range = 0.2,
+      palette_scale = 0.2,
     )
 
     self.decrease_strip = LightStrip(
@@ -58,7 +58,7 @@ class ChainsUi:
       value = 2,
       brightness = 1.0,
       # palette_shift_speed = 0.3,
-      palette_range = 0.25
+      palette_scale = 0.25
     )
 
     self.increase_strip = LightStrip(
@@ -69,7 +69,7 @@ class ChainsUi:
       value = 2,
       brightness = 1.0,
       # palette_shift_speed = 0.3,
-      palette_range = -0.25
+      palette_scale = -0.25
     )
 
     self.chain_strip = LightStrip(
@@ -109,11 +109,11 @@ class ChainsUi:
     if self.chain_strip.value != self.player.chains:
       self.update_strip(t)
   
-  def handle_keys(self, t, keys):
+  def handle_keys(self, t, pressed, down, up):
     close_x = 0 if self.player.side == 'left' else 7
     function_x = 7 if self.player.side == 'left' else 0
 
-    for key in keys:
+    for key in down:
       (x, y) = key
       if x in range(1, 7):
         new_chains = x + y * 6

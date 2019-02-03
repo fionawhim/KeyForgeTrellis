@@ -16,7 +16,7 @@ fps = 0
 fps_t = time.monotonic()
 
 SIXTY_FPS = 1 / 60.0
-KEY_CHECK_INTERVAL = 0.125
+KEY_CHECK_INTERVAL = 0.025
 
 while True:
   t = time.monotonic()
@@ -24,7 +24,10 @@ while True:
   if t >= last_pressed_t + KEY_CHECK_INTERVAL:
     pressed = set(trellis.pressed_keys)
 
-    app.handle_keys(t, pressed - last_pressed)
+    app.handle_keys(t,
+      pressed = pressed,
+      down = pressed - last_pressed,
+      up = last_pressed - pressed)
 
     last_pressed = pressed
     last_pressed_t = t

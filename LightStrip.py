@@ -1,7 +1,7 @@
 import time
 import adafruit_fancyled.adafruit_fancyled as fancy
 
-BRIGHTNESS = 0.3
+BRIGHTNESS = 0.6
  
 class LightStrip:
   def __init__(self, pixels, x_range, y_range, colors,
@@ -9,13 +9,13 @@ class LightStrip:
       speed = 0.05,
       brightness = BRIGHTNESS,
       palette_shift_speed = None,
-      palette_range = 1.0,
+      palette_scale = 1.0,
       background_color = fancy.CRGB(0, 0, 0),
       t = time.monotonic()):
     self.pixels = pixels
     self.speed = speed
     self.palette_shift_speed = palette_shift_speed
-    self.palette_range = palette_range
+    self.palette_scale = palette_scale
     self.colors = colors if type(colors) is list else [colors]
     self.background_color = background_color
 
@@ -34,7 +34,6 @@ class LightStrip:
     if y_range != None:
       self.y_pos = list(y_range)
 
-
     self.max_val = (abs(self.x_pos[-1] - self.x_pos[0]) + 1) * (abs(self.y_pos[-1] - self.y_pos[0]) + 1)
     self.max_time = self.speed * self.max_val
 
@@ -44,7 +43,7 @@ class LightStrip:
     max_color = (len(self.colors) - 1.0) / len(self.colors)
 
     # This will be multiplied by value - 1.
-    self.palette_step = max_color / (self.max_val - 1) * self.palette_range
+    self.palette_step = max_color / (self.max_val - 1) * self.palette_scale
 
   
   def set_value(self, value, t = None):
@@ -71,7 +70,8 @@ class LightStrip:
     if self.palette_shift_speed == None:
       palette_animation_offset = 0
     else:
-      palette_animation_offset = (t % self.palette_shift_speed) / self.palette_shift_speed
+      palette_t = t if self.last_value_t == None else t - self.last_value_t
+      palette_animation_offset = (palette_t % self.palette_shift_speed) / self.palette_shift_speed
     i = 1
 
     for y in self.y_pos:

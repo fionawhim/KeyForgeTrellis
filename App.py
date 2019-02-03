@@ -17,8 +17,8 @@ class App:
   def render(self, t):
     self.current_ui.render(t)
 
-  def handle_keys(self, t, keys):
-    self.current_ui.handle_keys(t, keys)
+  def handle_keys(self, t, pressed, down, up):
+    self.current_ui.handle_keys(t, pressed, down, up)
 
   def switch_ui(self, ui, player = None):
     self.trellis.pixels.fill((0, 0, 0))

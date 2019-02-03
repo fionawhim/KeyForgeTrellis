@@ -1,4 +1,5 @@
 import time
+import adafruit_fancyled.adafruit_fancyled as fancy
 
 import palettes
 from LightStrip import LightStrip
@@ -43,8 +44,8 @@ class PlayerKeyUi:
     for strip in self.strips:
       strip.render(t)
 
-  def handle_keys(self, t, pressed): 
-    for key in pressed:
+  def handle_keys(self, t, pressed, down, up): 
+    for key in down:
       (x, y) = key
       if x == self.key_x and y < len(self.strips):
         self.player.toggle_key(y)
@@ -64,6 +65,9 @@ class PlayerChainsUi:
   def __init__(self, trellis, app, player):
     self.app = app
     self.player = player
+    self.button_down_t = None
+
+    self.mode = 'normal'
 
     if player.side == SIDE_LEFT:
       self.x_range = range(4)
@@ -78,19 +82,57 @@ class PlayerChainsUi:
       value = 0,
     )
 
-    print("chains palette_step", self.strip.palette_step)
+    self.decrement_strip = LightStrip(
+      pixels = trellis.pixels,
+      x_range = self.x_range,
+      y_range = range(3, 4),
+      colors = [
+        fancy.CHSV(2.2/6, 1.0, 0.5),
+        fancy.CHSV(2.2/6, 0.25, 0.25),
+        fancy.CHSV(2.2/6, 0.25, 0.25),
+        fancy.CHSV(2.2/6, 0.25, 0.25),
+        fancy.CHSV(2.2/6, 0.25, 0.25),
+        fancy.CHSV(2.2/6, 0.25, 0.25),
+        fancy.CHSV(2.2/6, 0.25, 0.25),
+        fancy.CHSV(2.2/6, 0.25, 0.25),
+      ],
+      palette_shift_speed = 0.5,
+      palette_scale = 0.6,
+      speed = 0.000001,
+      value = 4,
+    )
 
- 
     self.update_strip()
 
   def render(self, t): 
-    self.strip.render(t)
+    if self.mode == 'normal':
+      if self.button_down_t != None and t > self.button_down_t + 0.4 and self.player.chains > 0:
+        self.mode = 'chain_down'
+        self.player.decrease_chains()
+        self.decrement_strip.set_value(4, t)
+        self.update_strip()
+      self.strip.render(t)
+    elif self.mode == 'chain_down':
+      self.decrement_strip.render(t)
 
-  def handle_keys(self, t, pressed):
-    for key in pressed:
+  def handle_keys(self, t, pressed, down, up):
+    for key in down:
       (x, y) = key
       if y == 3 and x in self.x_range:
-        self.app.switch_ui('chains', self.player)
+        self.button_down_t = t
+
+    for key in up:
+      (x, y) = key
+      if y == 3 and x in self.x_range:
+        if self.button_down_t != None:
+          self.button_down_t = None
+          if self.mode == 'normal':
+            self.app.switch_ui('chains', self.player)
+          else:
+            self.mode = 'normal'
+            self.strip.set_value(-1)
+            self.strip.render(t)
+            self.update_strip(t)
 
   def update_strip(self, t = None):
     if self.player.chains == 0:
@@ -118,6 +160,6 @@ class MainUi:
     for p in self.children:
       p.render(t)
 
-  def handle_keys(self, t, pressed):
+  def handle_keys(self, t, pressed, down, up):
     for p in self.children:
-      p.handle_keys(t, pressed)
+      p.handle_keys(t, pressed, down, up)
