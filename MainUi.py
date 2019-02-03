@@ -5,7 +5,7 @@ import adafruit_fancyled.adafruit_fancyled as fancy
 import palettes
 from LightStrip import LightStrip
 from ChainsUi import ChainsUi
-from EventQueue import EventQueue
+# from EventQueue import EventQueue
 
 SIDE_LEFT = 'left'
 SIDE_RIGHT = 'right'
@@ -142,21 +142,21 @@ class MainUi:
     self.chains_uis = []
     self.last_chains_t = None
 
-    self.events = EventQueue()
-    self.events.add_task('highlight_chains', 0.25)
-    self.events.add_task('reset_chains', 1)
+    # self.events = EventQueue()
+    # self.events.add_task('highlight_chains', 0.25)
+    # self.events.add_task('reset_chains', 1)
 
     for p in app.players:
       self.keys_uis.append(PlayerKeyUi(trellis, p))
       self.chains_uis.append(PlayerChainsUi(trellis, app, self, p))
   
   def render(self, t = time.monotonic()):
-    while 1:
-      event = self.events.next_event(t)
-      if event:
-        self.dispatch_event(t, event)
-      else:
-        break
+    # while 1:
+    #   event = self.events.next_event(t)
+    #   if event:
+    #     self.dispatch_event(t, event)
+    #   else:
+    #     break
 
     if self.last_chains_t != None and t > self.last_chains_t + 2:
       self.back_to_summary()
