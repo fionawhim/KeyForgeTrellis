@@ -1,8 +1,11 @@
 import time
+import math
 import adafruit_fancyled.adafruit_fancyled as fancy
 
 import palettes
 from LightStrip import LightStrip
+from ChainsUi import ChainsUi
+from EventQueue import EventQueue
 
 SIDE_LEFT = 'left'
 SIDE_RIGHT = 'right'
@@ -44,6 +47,10 @@ class PlayerKeyUi:
     for strip in self.strips:
       strip.render(t)
 
+  def dirty(self):
+    for strip in self.strips:
+      strip.dirty = True
+
   def handle_keys(self, t, pressed, down, up): 
     for key in down:
       (x, y) = key
@@ -62,8 +69,9 @@ class PlayerKeyUi:
         strip.set_value(1, t)
 
 class PlayerChainsUi:
-  def __init__(self, trellis, app, player):
+  def __init__(self, trellis, app, main, player):
     self.app = app
+    self.main = main
     self.player = player
     self.button_down_t = None
 
@@ -71,8 +79,12 @@ class PlayerChainsUi:
 
     if player.side == SIDE_LEFT:
       self.x_range = range(4)
+      self.decrement_x = 0
+      self.increment_x = 3
     else:
       self.x_range = range(7, 3, -1)
+      self.decrement_x = 7
+      self.increment_x = 4
 
     self.strip = LightStrip(
       pixels = trellis.pixels,
@@ -82,57 +94,29 @@ class PlayerChainsUi:
       value = 0,
     )
 
-    self.decrement_strip = LightStrip(
-      pixels = trellis.pixels,
-      x_range = self.x_range,
-      y_range = range(3, 4),
-      colors = [
-        fancy.CHSV(2.2/6, 1.0, 0.5),
-        fancy.CHSV(2.2/6, 0.25, 0.25),
-        fancy.CHSV(2.2/6, 0.25, 0.25),
-        fancy.CHSV(2.2/6, 0.25, 0.25),
-        fancy.CHSV(2.2/6, 0.25, 0.25),
-        fancy.CHSV(2.2/6, 0.25, 0.25),
-        fancy.CHSV(2.2/6, 0.25, 0.25),
-        fancy.CHSV(2.2/6, 0.25, 0.25),
-      ],
-      palette_shift_speed = 0.5,
-      palette_scale = 0.6,
-      speed = 0.000001,
-      value = 4,
-    )
-
     self.update_strip()
 
-  def render(self, t): 
-    if self.mode == 'normal':
-      if self.button_down_t != None and t > self.button_down_t + 0.4 and self.player.chains > 0:
-        self.mode = 'chain_down'
-        self.player.decrease_chains()
-        self.decrement_strip.set_value(4, t)
-        self.update_strip()
-      self.strip.render(t)
-    elif self.mode == 'chain_down':
-      self.decrement_strip.render(t)
+  def render(self, t):
+    self.strip.render(t)
+
+  def dirty(self):
+    self.strip.dirty = True
 
   def handle_keys(self, t, pressed, down, up):
     for key in down:
       (x, y) = key
-      if y == 3 and x in self.x_range:
-        self.button_down_t = t
+      if y == 3:
+        if x == self.increment_x:
+          self.player.increase_chains()
+          self.update_strip(t)
+          self.main.show_chains(self.player)
+        elif x == self.decrement_x:
+          self.player.decrease_chains()
+          self.update_strip(t)
+          self.main.show_chains(self.player)
 
-    for key in up:
-      (x, y) = key
-      if y == 3 and x in self.x_range:
-        if self.button_down_t != None:
-          self.button_down_t = None
-          if self.mode == 'normal':
-            self.app.switch_ui('chains', self.player)
-          else:
-            self.mode = 'normal'
-            self.strip.set_value(-1)
-            self.strip.render(t)
-            self.update_strip(t)
+  def highlight_chains(self, t = None):
+    self.strip.set_value(4, t)
 
   def update_strip(self, t = None):
     if self.player.chains == 0:
@@ -150,16 +134,68 @@ class PlayerChainsUi:
 class MainUi:
   def __init__(self, trellis, app):
     self.app = app
-    self.children = []
+    self.trellis = trellis
+    self.mode = 'summary'
+    self.chains_ui = None
+
+    self.keys_uis = []
+    self.chains_uis = []
+    self.last_chains_t = None
+
+    self.events = EventQueue()
+    self.events.add_task('highlight_chains', 0.25)
+    self.events.add_task('reset_chains', 1)
 
     for p in app.players:
-      self.children.append(PlayerKeyUi(trellis, p))
-      self.children.append(PlayerChainsUi(trellis, app, p))
+      self.keys_uis.append(PlayerKeyUi(trellis, p))
+      self.chains_uis.append(PlayerChainsUi(trellis, app, self, p))
   
   def render(self, t = time.monotonic()):
-    for p in self.children:
-      p.render(t)
+    while 1:
+      event = self.events.next_event(t)
+      if event:
+        self.dispatch_event(t, event)
+      else:
+        break
+
+    if self.last_chains_t != None and t > self.last_chains_t + 2:
+      self.back_to_summary()
+
+    for ui in self.keys_uis:
+      ui.render(t)
+
+    if self.mode == 'summary':
+      for ui in self.chains_uis:
+        ui.render(t)
+    elif self.mode == 'chains':
+      self.chains_ui.render(t)
 
   def handle_keys(self, t, pressed, down, up):
-    for p in self.children:
-      p.handle_keys(t, pressed, down, up)
+    for ui in self.keys_uis:
+      ui.handle_keys(t, pressed, down, up)
+    for ui in self.chains_uis:
+      ui.handle_keys(t, pressed, down, up)
+
+  def show_chains(self, p):
+    if self.mode != 'chains':
+      self.chains_ui = ChainsUi(self.trellis, self.app, p)
+      self.mode = 'chains'
+    self.last_chains_t = time.monotonic()
+
+  def back_to_summary(self):
+    self.mode = 'summary'
+    self.chains_ui = None
+    self.last_chains_t = None
+
+    for ui in self.keys_uis:
+      ui.dirty()
+    for ui in self.chains_uis:
+      ui.dirty()
+
+  def dispatch_event(self, t, event):
+    if event == 'highlight_chains':
+      for ui in self.chains_uis:
+        ui.highlight_chains(t)
+    elif event == 'reset_chains':
+      for ui in self.chains_uis:
+        ui.update_strip(t)

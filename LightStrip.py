@@ -24,6 +24,7 @@ class LightStrip:
     self.brightness = brightness
 
     self.rendered_value = 0
+    self.dirty = False
     self.value = value
     self.last_value = value
     self.last_value_t = t
@@ -47,13 +48,15 @@ class LightStrip:
 
   
   def set_value(self, value, t = None):
+    if value == self.value:
+      return
     self.last_value = self.rendered_value
     self.value = value
     self.last_value_t = t if t != None else 0
 
 
   def render(self, t = time.monotonic()):
-    if self.value == self.rendered_value and self.palette_shift_speed == None:
+    if self.value == self.rendered_value and self.palette_shift_speed == None and not self.dirty:
       return
 
     if self.last_value_t == None:
@@ -84,4 +87,6 @@ class LightStrip:
         self.pixels[x, y] = fancy.gamma_adjust(c, brightness = self.brightness).pack()
 
         i = i + 1
+
+    self.dirty = False
 
