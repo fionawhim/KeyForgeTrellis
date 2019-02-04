@@ -42,6 +42,6 @@ while True:
   fps = fps + 1
 
   if t > fps_t + 1:
-    print("FPS: ", fps / (t - fps_t))
+    print("FPS: ", fps / (t - fps_t), t)
     fps = 0
     fps_t = t

@@ -2,7 +2,7 @@ class Player:
   def __init__(self, side):
     self.side = side
     self.keys = [ False, False, False ]
-    self.chains = 4 if side == 'left' else 17
+    self.chains = 0 if side == 'left' else 0
 
   def toggle_key(self, i):
     self.keys[i] = not self.keys[i]

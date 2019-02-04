@@ -5,7 +5,7 @@ import adafruit_fancyled.adafruit_fancyled as fancy
 import palettes
 from LightStrip import LightStrip
 from ChainsUi import ChainsUi
-# from EventQueue import EventQueue
+from EventQueue import EventQueue
 
 SIDE_LEFT = 'left'
 SIDE_RIGHT = 'right'
@@ -43,7 +43,7 @@ class PlayerKeyUi:
 
     self.update_strips(None)
 
-  def render(self, t = time.monotonic()):
+  def render(self, t):
     for strip in self.strips:
       strip.render(t)
 
@@ -73,7 +73,6 @@ class PlayerChainsUi:
     self.app = app
     self.main = main
     self.player = player
-    self.button_down_t = None
 
     self.mode = 'normal'
 
@@ -107,13 +106,13 @@ class PlayerChainsUi:
       (x, y) = key
       if y == 3:
         if x == self.increment_x:
+          self.main.show_chains(self.player)
           self.player.increase_chains()
           self.update_strip(t)
-          self.main.show_chains(self.player)
         elif x == self.decrement_x:
+          self.main.show_chains(self.player)
           self.player.decrease_chains()
           self.update_strip(t)
-          self.main.show_chains(self.player)
 
   def highlight_chains(self, t = None):
     self.strip.set_value(4, t)
@@ -140,26 +139,22 @@ class MainUi:
 
     self.keys_uis = []
     self.chains_uis = []
-    self.last_chains_t = None
 
-    # self.events = EventQueue()
-    # self.events.add_task('highlight_chains', 0.25)
-    # self.events.add_task('reset_chains', 1)
+    self.events = EventQueue()
+    self.events.add_task('highlight_chains', 0.25)
+    self.events.add_task('reset_chains', 1)
 
     for p in app.players:
       self.keys_uis.append(PlayerKeyUi(trellis, p))
       self.chains_uis.append(PlayerChainsUi(trellis, app, self, p))
   
-  def render(self, t = time.monotonic()):
-    # while 1:
-    #   event = self.events.next_event(t)
-    #   if event:
-    #     self.dispatch_event(t, event)
-    #   else:
-    #     break
-
-    if self.last_chains_t != None and t > self.last_chains_t + 2:
-      self.back_to_summary()
+  def render(self, t):
+    while 1:
+      event = self.events.next_event(t)
+      if event:
+        self.dispatch_event(t, event)
+      else:
+        break
 
     for ui in self.keys_uis:
       ui.render(t)
@@ -180,12 +175,16 @@ class MainUi:
     if self.mode != 'chains':
       self.chains_ui = ChainsUi(self.trellis, self.app, p)
       self.mode = 'chains'
-    self.last_chains_t = time.monotonic()
+    try:
+      self.events.remove_task('close_chains')
+      self.events.remove_task('back_to_summary')
+    except KeyError:
+      pass
+    self.events.add_task('close_chains', 1.5)
 
   def back_to_summary(self):
     self.mode = 'summary'
     self.chains_ui = None
-    self.last_chains_t = None
 
     for ui in self.keys_uis:
       ui.dirty()
@@ -199,3 +198,9 @@ class MainUi:
     elif event == 'reset_chains':
       for ui in self.chains_uis:
         ui.update_strip(t)
+    elif event == 'close_chains':
+      wait = self.chains_ui.close(t)
+      self.events.add_task('back_to_summary', wait, t)
+    elif event == 'back_to_summary':
+      self.back_to_summary()
+  

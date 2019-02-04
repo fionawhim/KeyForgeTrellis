@@ -7,7 +7,9 @@ class EventQueue:
   pq = []                         # list of entries arranged in a heap
   entry_finder = {}               # mapping of tasks to entries
 
-  def add_task(self, task, delay, t = time.monotonic()):
+  def add_task(self, task, delay, t = None):
+    if t == None:
+      t = time.monotonic()
     if task in self.entry_finder:
       self.remove_task(task)
     entry = [delay + t, task]
@@ -18,7 +20,9 @@ class EventQueue:
     entry = self.entry_finder.pop(task)
     entry[-1] = REMOVED
 
-  def next_event(self, t = time.monotonic()):
+  def next_event(self, t = None):
+    if t == None:
+      t = item.monotonic()
     while self.pq and self.pq[0][0] <= t:
       delay, task = heappop(self.pq)
       if task is not REMOVED:

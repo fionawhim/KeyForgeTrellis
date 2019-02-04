@@ -6,6 +6,7 @@ BRIGHTNESS = 0.6
 class LightStrip:
   def __init__(self, pixels, x_range, y_range, colors,
       value = 0,
+      min_value = 0,
       speed = 0.05,
       brightness = BRIGHTNESS,
       palette_shift_speed = None,
@@ -26,6 +27,7 @@ class LightStrip:
     self.rendered_value = 0
     self.dirty = False
     self.value = value
+    self.min_value = min_value
     self.last_value = value
     self.last_value_t = t
 
@@ -55,7 +57,7 @@ class LightStrip:
     self.last_value_t = t if t != None else 0
 
 
-  def render(self, t = time.monotonic()):
+  def render(self, t):
     if self.value == self.rendered_value and self.palette_shift_speed == None and not self.dirty:
       return
 
@@ -79,12 +81,16 @@ class LightStrip:
 
     for y in self.y_pos:
       for x in self.x_pos:
-        if i > self.rendered_value:
-          c = self.background_color
-        else:
+        if i <= self.min_value:
+          c = None
+        elif i <= self.rendered_value:
           c_idx = (i - 1) * self.palette_step + palette_animation_offset
           c = fancy.palette_lookup(self.colors, c_idx)
-        self.pixels[x, y] = fancy.gamma_adjust(c, brightness = self.brightness).pack()
+        else:
+          c = self.background_color
+
+        if c != None:
+          self.pixels[x, y] = fancy.gamma_adjust(c, brightness = self.brightness).pack()
 
         i = i + 1
 

@@ -27,6 +27,8 @@ BLUE_WITH_WHITE_HIGHLIGHT_PALETTE = [
   fancy.CHSV(4/6.0, 0.0, 1.0),
 ]
 
+CHAIN_STRIP_SPEED = 0.02
+
 class ChainsUi:
   def __init__(self, trellis, app, player):
     self.app = app
@@ -35,78 +37,64 @@ class ChainsUi:
     if player.side == 'left':
       player_x = range(0, 1)
       controls_x = range(7, 8)
+      chains_x = range(1, 7)
     else:
       player_x = range(7, 8)
       controls_x = range(0, 1)
+      chains_x = range(6, 0, -1)
 
     self.player_strip = LightStrip(
       pixels = trellis.pixels,
       x_range = player_x,
       y_range = range(0, 4),
       colors = BLUE_WITH_WHITE_HIGHLIGHT_PALETTE,
-      value = 4,
+      value = 0,
       brightness = 0.6,
       palette_shift_speed = -2,
       palette_scale = 0.2,
     )
 
-    self.decrease_strip = LightStrip(
+    self.chain_bg_strip = LightStrip(
       pixels = trellis.pixels,
-      x_range = controls_x, 
-      y_range = range(0, 2),
-      colors = DECREASE_STRIP_COLORS,
-      value = 2,
-      brightness = 1.0,
-      # palette_shift_speed = 0.3,
-      palette_scale = 0.25
-    )
-
-    self.increase_strip = LightStrip(
-      pixels = trellis.pixels,
-      x_range = controls_x, 
-      y_range = range(2, 4),
-      colors = INCREASE_STRIP_COLORS,
-      value = 2,
-      brightness = 1.0,
-      # palette_shift_speed = 0.3,
-      palette_scale = -0.25
+      x_range = chains_x,
+      y_range = range(0, 4),
+      colors = [
+        fancy.CHSV(4/6.0, 0.7, 0.4),
+        fancy.CHSV(4/6.0, 0.0, 0.4),
+        fancy.CHSV(4/6.0, 0.0, 0.4),
+        fancy.CHSV(4/6.0, 0.0, 0.4),
+        fancy.CHSV(4/6.0, 0.0, 0.4),
+      ], 
+      brightness = 0.8,
+      speed = CHAIN_STRIP_SPEED,
+      palette_shift_speed = 1,
+      value = self.player.chains,
     )
 
     self.chain_strip = LightStrip(
       pixels = trellis.pixels,
-      x_range = range(1, 7),
+      x_range = chains_x,
       y_range = range(0, 4),
       colors = palettes.CHAINS, 
       brightness = 0.8,
-      speed = 0.02,
+      speed = CHAIN_STRIP_SPEED,
       value = -1,
-      background_color = fancy.CHSV(0, 0, 0.2),
+      background_color = None,
     )
 
     self.strips = [
       self.player_strip,
+      self.chain_bg_strip,
       self.chain_strip,
-      # self.decrease_strip,
-      # self.increase_strip,
     ]
 
-    self.start_t = time.monotonic()
+    self.closing = False
   
   def render(self, t): 
-    # if t > self.start_t + 2:
-    #   self.increase_strip.palette_shift_speed = None
-    #   self.decrease_strip.palette_shift_speed = None
-
-    #   self.increase_strip.set_value(3, t)
-    #   self.decrease_strip.set_value(3, t)
-    # else:
-    #   self.increase_strip.palette_shift_speed = self.increase_strip.palette_shift_speed * 1.05
-    #   self.decrease_strip.palette_shift_speed = self.decrease_strip.palette_shift_speed * 1.05
-
     for strip in self.strips:
       strip.render(t)
 
-    if self.chain_strip.value != self.player.chains:
+    if self.chain_strip.value != self.player.chains and not self.closing:
       self.update_strip(t)
   
   def handle_keys(self, t, pressed, down, up):
@@ -136,3 +124,11 @@ class ChainsUi:
 
   def update_strip(self, t = None):
     self.chain_strip.set_value(self.player.chains, t)
+    self.chain_bg_strip.min_value = self.player.chains
+
+  def close(self, t):
+    self.closing = True
+    self.chain_strip.set_value(0, t)
+    self.chain_strip.background_color = fancy.CRGB(0, 0, 0)
+    self.chain_bg_strip.min_value = 24
+    return CHAIN_STRIP_SPEED * self.player.chains + 0.1
