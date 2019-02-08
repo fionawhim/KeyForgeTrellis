@@ -35,11 +35,11 @@ class ChainsUi:
     self.player = player
 
     if player.side == 'left':
-      player_x = range(0, 1)
+      player_x = range(7, 8)
       controls_x = range(7, 8)
       chains_x = range(1, 7)
     else:
-      player_x = range(7, 8)
+      player_x = range(0, 1)
       controls_x = range(0, 1)
       chains_x = range(6, 0, -1)
 
@@ -121,6 +121,7 @@ class ChainsUi:
 
   def set_player(self, player):
     self.player = player
+    self.chain_bg_strip.dirty = True
 
   def update_strip(self, t = None):
     self.chain_strip.set_value(self.player.chains, t)

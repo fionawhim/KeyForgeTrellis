@@ -3,6 +3,12 @@ class Player:
     self.side = side
     self.keys = [ False, False, False ]
     self.chains = 0 if side == 'left' else 0
+    self.is_first = False
+
+  def reset(self):
+    self.keys = [ False, False, False ]
+    self.chains = 0
+    self.is_first = False
 
   def toggle_key(self, i):
     self.keys[i] = not self.keys[i]

@@ -38,7 +38,7 @@ class LightStrip:
       self.y_pos = list(y_range)
 
     self.max_val = (abs(self.x_pos[-1] - self.x_pos[0]) + 1) * (abs(self.y_pos[-1] - self.y_pos[0]) + 1)
-    self.max_time = self.speed * self.max_val
+    self.max_time = 1 if self.speed is None else self.speed * self.max_val
 
     # Compensates for the last 'fence' of the color palette range going back to 0.
     # e.g. in a 4-color palette, 0 -> 0.25 -> 0.5 -> 0.75 -> 1.0
@@ -58,10 +58,12 @@ class LightStrip:
 
 
   def render(self, t):
-    if self.value == self.rendered_value and self.palette_shift_speed == None and not self.dirty:
+    if (self.value == self.rendered_value and
+        (self.palette_shift_speed == None or self.value == 0) and
+        not self.dirty):
       return
 
-    if self.last_value_t == None:
+    if self.last_value_t == None or self.speed is None:
       time_delta = self.max_val
     else:
       time_diff = t - self.last_value_t
