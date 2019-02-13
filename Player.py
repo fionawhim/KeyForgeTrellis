@@ -1,3 +1,7 @@
+SIDE_LEFT = "left"
+SIDE_RIGHT = "right"
+
+
 class Player:
     def __init__(self, side):
         self.side = side

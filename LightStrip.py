@@ -103,9 +103,9 @@ class LightStrip:
                     c = self.background_color
 
                 if c != None:
-                    self.pixels[x, y] = fancy.gamma_adjust(
-                        c, brightness=self.brightness
-                    ).pack()
+                    c_packed = fancy.gamma_adjust(c, brightness=self.brightness).pack()
+                    self.pixels[x, y] = c_packed
+                    
                 i = i + 1
 
         self.dirty = False
