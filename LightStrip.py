@@ -8,9 +8,9 @@ class LightStrip:
     def __init__(
         self,
         pixels,
-        x_range,
-        y_range,
         colors,
+        x_range=None,
+        y_range=None,
         value=0,
         min_value=0,
         speed=0.05,
@@ -18,6 +18,8 @@ class LightStrip:
         palette_shift_speed=None,
         palette_scale=1.0,
         background_color=fancy.CRGB(0, 0, 0),
+        positions=None,
+        color_from_end=False,
         t=time.monotonic(),
     ):
         self.pixels = pixels
@@ -26,8 +28,9 @@ class LightStrip:
         self.palette_scale = palette_scale
         self.colors = colors if type(colors) is list else [colors]
         self.background_color = background_color
+        self.color_from_end = color_from_end
 
-        self.set_position(x_range, y_range)
+        self.set_position(x_range, y_range, positions)
 
         self.brightness = brightness
 
@@ -38,15 +41,16 @@ class LightStrip:
         self.last_value = value
         self.last_value_t = t
 
-    def set_position(self, x_range=None, y_range=None):
-        if x_range != None:
-            self.x_pos = list(x_range)
-        if y_range != None:
-            self.y_pos = list(y_range)
+    def set_position(self, x_range=None, y_range=None, positions=None):
+        if positions == None:
+            positions = []
+            for y in y_range:
+                for x in x_range:
+                    positions.append((x, y))
 
-        self.max_val = (abs(self.x_pos[-1] - self.x_pos[0]) + 1) * (
-            abs(self.y_pos[-1] - self.y_pos[0]) + 1
-        )
+        self.positions = positions
+
+        self.max_val = len(positions)
         self.max_time = 1 if self.speed is None else self.speed * self.max_val
 
         # Compensates for the last 'fence' of the color palette range going back to 0.
@@ -57,9 +61,11 @@ class LightStrip:
         # This will be multiplied by value - 1.
         self.palette_step = max_color / (self.max_val - 1) * self.palette_scale
 
-    def set_value(self, value, t=None):
+    def set_value(self, value, t=None, now=False):
         if value == self.value:
             return
+        if now:
+            self.rendered_value = 0
         self.last_value = self.rendered_value
         self.value = value
         self.last_value_t = t if t != None else 0
@@ -92,21 +98,27 @@ class LightStrip:
             ) / self.palette_shift_speed
         i = 1
 
-        for y in self.y_pos:
-            for x in self.x_pos:
-                if i <= self.min_value:
-                    c = None
-                elif i <= self.rendered_value:
-                    c_idx = (i - 1) * self.palette_step + palette_animation_offset
-                    c = fancy.palette_lookup(self.colors, c_idx)
-                else:
-                    c = self.background_color
+        if self.color_from_end:
+            palette_align = self.max_val - self.rendered_value
+        else:
+            palette_align = 0
 
-                if c != None:
-                    c_packed = fancy.gamma_adjust(c, brightness=self.brightness).pack()
-                    self.pixels[x, y] = c_packed
-                    
-                i = i + 1
+        for (x, y) in self.positions:
+            if i <= self.min_value:
+                c = None
+            elif i <= self.rendered_value:
+                c_idx = (
+                    i - 1 + palette_align
+                ) * self.palette_step + palette_animation_offset
+                c = fancy.palette_lookup(self.colors, c_idx)
+            else:
+                c = self.background_color
+
+            if c != None:
+                c_packed = fancy.gamma_adjust(c, brightness=self.brightness).pack()
+                self.pixels[x, y] = c_packed
+
+            i = i + 1
 
         self.dirty = False
 

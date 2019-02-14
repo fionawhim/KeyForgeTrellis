@@ -21,6 +21,10 @@ class EventQueue:
         entry = self.entry_finder.pop(task)
         entry[-1] = REMOVED
 
+    def clear(self):
+        self.pq = []
+        self.entry_finder = {}
+
     def next_event(self, t=None):
         if t == None:
             t = item.monotonic()

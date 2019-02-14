@@ -27,7 +27,7 @@ class App:
 
         self.events = EventQueue()
 
-        self.state = STATE_STARTUP
+        self.state = None
         self.transitioning = False
 
         self.startup_ui = StartupUi(trellis=trellis, app=self)
@@ -39,6 +39,8 @@ class App:
             [self.startup_ui],
             [self.left_player_ui, self.right_player_ui],
         ]
+
+        self.events.add_task(("finish_transition", STATE_STARTUP), 0)
 
     def run(self):
         self.trellis.pixels.auto_write = False
@@ -52,7 +54,7 @@ class App:
         while True:
             t = time.monotonic()
 
-            modules = self.active_modules_by_state[self.state]
+            modules = self.active_modules_by_state[self.state] if self.state != None else []
 
             while 1:
                 event = self.events.next_event(t)
@@ -108,8 +110,7 @@ class App:
         self.events.add_task(("finish_transition", new_state), leaving_delay, t)
 
     def finish_transition(self, t, new_state):
-
-        current_modules = set(self.active_modules_by_state[self.state])
+        current_modules = set(self.active_modules_by_state[self.state]) if self.state != None else set()
         new_modules = set(self.active_modules_by_state[new_state])
 
         entering_modules = new_modules - current_modules
