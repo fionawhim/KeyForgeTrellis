@@ -1,4 +1,5 @@
 import time
+from math import floor
 import adafruit_fancyled.adafruit_fancyled as fancy
 
 BRIGHTNESS = 0.6
@@ -115,10 +116,12 @@ class LightStrip:
                 c = self.background_color
 
             if c != None:
-                c_packed = fancy.gamma_adjust(c, brightness=self.brightness).pack()
+                c_packed = pack(fancy.gamma_adjust(c, brightness=self.brightness))
                 self.pixels[x, y] = c_packed
 
             i = i + 1
 
         self.dirty = False
 
+def pack(c):
+  return (floor(c.red * 255) << 16) | (floor(c.green * 255) << 8) | (floor(c.blue * 255))

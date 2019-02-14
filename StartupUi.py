@@ -13,6 +13,7 @@ EDGE_POSITIONS = (
 )
 EDGE_STRIP_TIME = 1
 
+
 class StartupUi(UiModule):
     def __init__(self, trellis, app):
         super().__init__()
@@ -54,7 +55,6 @@ class StartupUi(UiModule):
 
     def enter(self, t):
         self.center_strip.speed = 0.1
-
 
     def leave(self, t):
         self.center_strip.speed = 0.05

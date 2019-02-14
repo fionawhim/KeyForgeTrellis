@@ -5,8 +5,9 @@ REMOVED = "<removed-task>"  # placeholder for a removed task
 
 
 class EventQueue:
-    pq = []  # list of entries arranged in a heap
-    entry_finder = {}  # mapping of tasks to entries
+    def __init__(self):
+        self.pq = []  # list of entries arranged in a heap
+        self.entry_finder = {}  # mapping of tasks to entries
 
     def add_task(self, task, delay, t=None):
         if t == None:

@@ -1,9 +1,10 @@
 from EventQueue import EventQueue
 
+
 class UiModule:
     def __init__(self):
         self.events = EventQueue()
-    
+
     def render(self, t):
         pass
 
@@ -16,7 +17,7 @@ class UiModule:
     def leave(self, t):
         return 0
 
-    def process_events(self, t): 
+    def process_events(self, t):
         while 1:
             event = self.events.next_event(t)
             if event:

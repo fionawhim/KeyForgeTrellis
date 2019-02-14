@@ -1,12 +1,12 @@
 import palettes
+import Player
 
 from EventQueue import EventQueue
 from LightStrip import LightStrip
-from StartupUi import StartupUi
-import Player
+from UiModule import UiModule
 
 
-class PlayerKeyUi(StartupUi):
+class PlayerKeyUi(UiModule):
     def __init__(self, trellis, player):
         self.player = player
 
@@ -43,10 +43,6 @@ class PlayerKeyUi(StartupUi):
         for strip in self.strips:
             strip.render(t)
 
-    def dirty(self):
-        for strip in self.strips:
-            strip.dirty = True
-
     def handle_keys(self, t, pressed, down, up):
         for key in down:
             (x, y) = key
@@ -61,6 +57,8 @@ class PlayerKeyUi(StartupUi):
 
             if key and strip.value == 1:
                 strip.set_value(4, t)
+                strip.palette_shift_speed = -30
             elif not key and strip.value == 4:
                 strip.set_value(1, t)
+                strip.palette_shift_speed = None
 

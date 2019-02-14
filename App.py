@@ -3,6 +3,7 @@ import time
 from MainUi import MainUi
 import Player
 from PlayerKeyUi import PlayerKeyUi
+from PlayerChainsUi import PlayerChainsUi
 from ChainsUi import ChainsUi
 from StartupUi import StartupUi
 
@@ -34,13 +35,24 @@ class App:
 
         self.left_player_ui = PlayerKeyUi(trellis=trellis, player=self.players[0])
         self.right_player_ui = PlayerKeyUi(trellis=trellis, player=self.players[1])
+        self.left_chains_ui = PlayerChainsUi(
+            trellis=trellis, app=self, player=self.players[0]
+        )
+        self.right_chains_ui = PlayerChainsUi(
+            trellis=trellis, app=self, player=self.players[1]
+        )
 
         self.active_modules_by_state = [
             [self.startup_ui],
-            [self.left_player_ui, self.right_player_ui],
+            [
+                self.left_player_ui,
+                self.right_player_ui,
+                self.left_chains_ui,
+                self.right_chains_ui,
+            ],
         ]
 
-        self.events.add_task(("finish_transition", STATE_STARTUP), 0)
+        self.events.add_task(("finish_transition", STATE_MAIN), 0)
 
     def run(self):
         self.trellis.pixels.auto_write = False
@@ -54,7 +66,9 @@ class App:
         while True:
             t = time.monotonic()
 
-            modules = self.active_modules_by_state[self.state] if self.state != None else []
+            modules = (
+                self.active_modules_by_state[self.state] if self.state != None else []
+            )
 
             while 1:
                 event = self.events.next_event(t)
@@ -110,7 +124,11 @@ class App:
         self.events.add_task(("finish_transition", new_state), leaving_delay, t)
 
     def finish_transition(self, t, new_state):
-        current_modules = set(self.active_modules_by_state[self.state]) if self.state != None else set()
+        current_modules = (
+            set(self.active_modules_by_state[self.state])
+            if self.state != None
+            else set()
+        )
         new_modules = set(self.active_modules_by_state[new_state])
 
         entering_modules = new_modules - current_modules
