@@ -21,6 +21,9 @@ class LightStrip:
         background_color=fancy.CRGB(0, 0, 0),
         positions=None,
         color_from_end=False,
+        highlight=None,
+        highlight_color=fancy.CHSV(0, 0, 1.0),
+        highlight_speed=1,
         t=time.monotonic(),
     ):
         self.pixels = pixels
@@ -30,6 +33,10 @@ class LightStrip:
         self.colors = colors if type(colors) is list else [colors]
         self.background_color = background_color
         self.color_from_end = color_from_end
+        self.highlight = highlight
+        self.highlight_color = highlight_color
+        self.highlight_speed = highlight_speed
+        self.highlight_t = 0
 
         self.set_position(x_range, y_range, positions)
 
@@ -71,11 +78,29 @@ class LightStrip:
         self.value = value
         self.last_value_t = t if t != None else 0
 
+    def set_highlight(self, highlight, t=0):
+        if type(highlight) != list:
+            highlight = [highlight]
+
+        self.highlight = []
+
+        for h in highlight:
+            if type(h) is int:
+                self.highlight.append(self.positions[h - 1])
+            else:
+                self.highlight.append(h)
+        self.highlight_t = t
+
+    def clear_highlight(self):
+        self.highlight = None
+        self.dirty = True
+
     def render(self, t):
         if (
             self.value == self.rendered_value
             and (self.palette_shift_speed == None or self.value == 0)
             and not self.dirty
+            and self.highlight == None
         ):
             return
 
@@ -89,6 +114,13 @@ class LightStrip:
             self.rendered_value = min(self.value, self.last_value + time_delta)
         else:
             self.rendered_value = max(self.value, self.last_value - time_delta)
+
+        highlight_mix = abs(
+            0.5
+            - ((t - self.highlight_t) % self.highlight_speed)
+            / (self.highlight_speed)
+            * 1.5
+        ) if self.highlight_speed != None else 0
 
         if self.palette_shift_speed == None:
             palette_animation_offset = 0
@@ -115,6 +147,12 @@ class LightStrip:
             else:
                 c = self.background_color
 
+            if self.highlight != None and (x, y) in self.highlight:
+                if c == None:
+                    c = fancy.CHSV(0, 0, 0.0)
+
+                c = fancy.mix(self.highlight_color, c, highlight_mix)
+
             if c != None:
                 c_packed = pack(fancy.gamma_adjust(c, brightness=self.brightness))
                 self.pixels[x, y] = c_packed
@@ -123,5 +161,8 @@ class LightStrip:
 
         self.dirty = False
 
+
 def pack(c):
-  return (floor(c.red * 255) << 16) | (floor(c.green * 255) << 8) | (floor(c.blue * 255))
+    return (
+        (floor(c.red * 255) << 16) | (floor(c.green * 255) << 8) | (floor(c.blue * 255))
+    )

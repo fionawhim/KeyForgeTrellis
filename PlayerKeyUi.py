@@ -50,15 +50,25 @@ class PlayerKeyUi(UiModule):
                 self.player.toggle_key(y)
                 self.update_strips(t)
 
+    def enter(self, t):
+        for s in self.strips:
+            s.dirty = True
+        self.update_strips(t)
+
+    def leave(self, t):
+        for strip in self.strips:
+            strip.set_value(0, t)
+        return 0.25
+
     def update_strips(self, t):
         for i in range(len(self.strips)):
             key = self.player.keys[i]
             strip = self.strips[i]
 
-            if key and strip.value == 1:
+            if key:
                 strip.set_value(4, t)
                 strip.palette_shift_speed = -30
-            elif not key and strip.value == 4:
+            else:
                 strip.set_value(1, t)
                 strip.palette_shift_speed = None
 

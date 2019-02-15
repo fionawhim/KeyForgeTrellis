@@ -26,7 +26,10 @@ class App:
             Player.Player(Player.SIDE_RIGHT),
         ]
 
+        self.current_player = self.players[0]
+
         self.events = EventQueue()
+        self.pressed = set()
 
         self.state = None
         self.transitioning = False
@@ -41,23 +44,30 @@ class App:
         self.right_chains_ui = PlayerChainsUi(
             trellis=trellis, app=self, player=self.players[1]
         )
+        self.chains_ui = ChainsUi(trellis, self)
 
         self.active_modules_by_state = [
+            # Startup
             [self.startup_ui],
+            # Main
             [
                 self.left_player_ui,
                 self.right_player_ui,
                 self.left_chains_ui,
                 self.right_chains_ui,
             ],
+            # Pick first player
+            [],
+            # Chains
+            [self.chains_ui],
         ]
 
+        # self.events.add_task(("finish_transition", STATE_EDIT_CHAINS), 0)
         self.events.add_task(("finish_transition", STATE_MAIN), 0)
 
     def run(self):
         self.trellis.pixels.auto_write = False
 
-        last_pressed = set()
         last_pressed_t = 0
 
         fps = 0
@@ -80,13 +90,13 @@ class App:
             if t >= last_pressed_t + KEY_CHECK_INTERVAL:
                 pressed = set(self.trellis.pressed_keys)
 
-                down = pressed - last_pressed
-                up = last_pressed - pressed
+                down = pressed - self.pressed
+                up = self.pressed - pressed
 
                 for m in modules:
                     m.handle_keys(t, pressed=pressed, down=down, up=up)
 
-                last_pressed = pressed
+                self.pressed = pressed
                 last_pressed_t = t
 
             for m in modules:
@@ -104,11 +114,14 @@ class App:
                 fps = 0
                 fps_t = t
 
+    def show_chains(self, t, player):
+        self.current_player = player
+        self.start_transition(t, STATE_EDIT_CHAINS)
+
     def start_transition(self, t, new_state):
         if self.transitioning:
             return
 
-        print("Starting transition to ", new_state)
         self.transitioning = True
 
         current_modules = set(self.active_modules_by_state[self.state])
