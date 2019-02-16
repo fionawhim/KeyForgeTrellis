@@ -118,6 +118,7 @@ class App:
                                 math.fabs(self.axis_reading[2] - z) > SHAKE_THRESHOLD)
                 self.axis_reading = (x, y, z)
                 if shaken:
+                    print("SHAKEN")
                     self.start_transition(t, STATE_MAIN)
                 elif z > FLIP_THRESHOLD:
                     self.start_transition(t, STATE_STARTUP)

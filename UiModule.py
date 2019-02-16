@@ -12,6 +12,7 @@ class UiModule:
         pass
 
     def enter(self, t):
+        self.events.clear()
         pass
 
     def leave(self, t):
