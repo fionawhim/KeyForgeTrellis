@@ -15,6 +15,7 @@ class UiModule:
         pass
 
     def leave(self, t):
+        self.events.clear()
         return 0
 
     def process_events(self, t):

@@ -7,18 +7,8 @@ import Player
 from LightStrip import LightStrip
 from UiModule import UiModule
 
-BLUE_WITH_WHITE_HIGHLIGHT_PALETTE = [
-    fancy.CHSV(4 / 6.0, 0.7, 1.0),
-    fancy.CHSV(4 / 6.0, 0.7, 1.0),
-    fancy.CHSV(4 / 6.0, 0.7, 1.0),
-    fancy.CHSV(4 / 6.0, 0.7, 1.0),
-    fancy.CHSV(4 / 6.0, 0.7, 1.0),
-    fancy.CHSV(4 / 6.0, 0.7, 1.0),
-    fancy.CHSV(4 / 6.0, 0.7, 1.0),
-    fancy.CHSV(4 / 6.0, 0.0, 1.0),
-]
-
 CHAIN_STRIP_SPEED = 0.02
+CHAIN_INTERACTIVE_SPEED = 0.08
 
 
 class ChainsUi(UiModule):
@@ -27,34 +17,15 @@ class ChainsUi(UiModule):
 
         self.app = app
 
-        # if player.side == "left":
-        #     player_x = range(7, 8)
-        #     controls_x = range(7, 8)
-        #     chains_x = range(1, 7)
-        # else:
-        #     player_x = range(0, 1)
-        #     controls_x = range(0, 1)
-        #     chains_x = range(6, 0, -1)
-
-        self.player_strip = LightStrip(
-            pixels=trellis.pixels,
-            x_range=range(0, 1),
-            y_range=range(0, 4),
-            colors=BLUE_WITH_WHITE_HIGHLIGHT_PALETTE,
-            value=4,
-            brightness=0.6,
-            palette_shift_speed=-2,
-            palette_scale=0.2,
-        )
-
+        # Used to animate the box going away
         self.chain_bg_strip = LightStrip(
             pixels=trellis.pixels,
             x_range=range(1, 7),
             y_range=range(0, 4),
-            colors=[fancy.CHSV(4 / 6.0, 0.3, 0.2)],
+            colors=[fancy.CHSV(0, 0, 0.0)],
             brightness=0.8,
-            speed=0.01,
-            # palette_shift_speed=-10,
+            speed=CHAIN_STRIP_SPEED,
+            background_color=None,
             value=0,
         )
 
@@ -65,31 +36,13 @@ class ChainsUi(UiModule):
             colors=palettes.CHAINS,
             brightness=0.8,
             speed=CHAIN_STRIP_SPEED,
-            value=0,
-            background_color=None,
+            value=-1,
+            background_color=fancy.CHSV(4 / 6.0, 0.3, 0.2),
             highlight_color=fancy.CHSV(0, 0.8, 0.0),
             highlight_speed=0.25,
         )
 
-        self.button_strip = LightStrip(
-            pixels=trellis.pixels,
-            x_range=range(1, 7),
-            y_range=range(3, 4),
-            colors=palettes.CHAINS,
-            brightness=0.8,
-            speed=CHAIN_STRIP_SPEED,
-            value=0,
-            background_color=None,
-            highlight_color=fancy.CHSV(0, 0.5, 1.0),
-            highlight_speed=None,
-        )
-
-        self.strips = [
-            self.player_strip,
-            self.chain_bg_strip,
-            self.chain_strip,
-            self.button_strip,
-        ]
+        self.strips = [self.chain_strip, self.chain_bg_strip]
 
     def render(self, t):
         self.process_events(t)
@@ -97,36 +50,36 @@ class ChainsUi(UiModule):
             strip.render(t)
 
     def enter(self, t):
+        super().enter(t)
+
         p = self.app.current_player
 
-        x_range = range(0, 1) if p.side == Player.SIDE_LEFT else range(7, 8)
+        self.x_range = range(0, 6) if p.side == Player.SIDE_LEFT else range(7, 1, -1)
+        self.y_range = range(0, 4)
 
-        self.player_strip.set_position(x_range, range(0, 4))
-        self.player_strip.set_value(4)
-        self.player_strip.highlight = None
-        self.chain_bg_strip.set_value(24)
-        self.chain_strip.set_value(p.chains, t)
-        self.chain_strip.background_color = None
+        self.chain_strip.set_position(x_range=self.x_range, y_range=self.y_range)
+        self.chain_bg_strip.set_position(x_range=self.x_range, y_range=self.y_range)
+
+        self.chain_bg_strip.set_value(0)
+        self.chain_strip.speed = CHAIN_STRIP_SPEED
+        self.chain_strip.set_value(p.chains, t, now=True)
+        self.chain_strip.dirty = True
+
         self.chain_strip.highlight_color = fancy.CHSV(0, 0.8, 0.0)
         self.chain_strip.highlight_speed = 0.25
-        self.button_strip.highlight = None
 
-        self.initial_chains = p.chains
+        self.decrement_button = None
 
-        self.events.add_task("exit", 5, t)
-
-        if p.chains > 0:
-            for (x, y) in self.app.pressed:
-                if y == 3:
-                    self.button_strip.set_highlight((x, y), t)
-                    self.events.add_task("decrement_chain", 1.5, t)
+        for (x, y) in self.app.pressed:
+            if y == 3 and p.chains > 0:
+                self.decrement_button = x
+                self.events.add_task("decrement_chain", 0.5, t)
 
     def leave(self, t):
-        self.chain_strip.set_value(0)
-        self.chain_strip.background_color = None
-        self.chain_bg_strip.set_value(0, t)
+        super().leave(t)
+
+        self.chain_bg_strip.set_value(24, t)
         self.chain_strip.clear_highlight()
-        self.player_strip.set_value(0, t)
         return 0.25
 
     def handle_keys(self, t, pressed, down, up):
@@ -137,57 +90,39 @@ class ChainsUi(UiModule):
                 self.events.remove_task("exit")
             except KeyError:
                 pass
-        elif len(up) > 0:
-            self.events.add_task("exit", 5, t)
 
         if len(pressed) == 1:
             for (x, y) in down:
-                if x == 0 or x == 7:
-                    self.player_strip.set_highlight((x, y), t)
-                else:
-                    new_chains = y * 6 + x
+                if x in self.x_range:
+                    new_chains = y * 6 + list(self.x_range).index(x) + 1
+
+                    # If you're on 1, toggle it to 0 because otherwise there’s
+                    # no other way to get to 0.
                     if new_chains == 1 and p.chains == 1:
                         p.chains = 0
                     else:
                         p.chains = new_chains
 
-                    self.chain_strip.background_color = self.chain_bg_strip.colors[0]
-                    if p.chains < self.initial_chains:
-                        self.chain_strip.set_highlight(
-                            list(range(p.chains + 1, self.initial_chains + 1)), t
-                        )
-                        self.chain_strip.highlight_color = fancy.CHSV(0, 0, 0.0)
-                        self.chain_strip.highlight_speed = 0.75
-                    elif p.chains > self.initial_chains:
-                        self.chain_strip.set_highlight(
-                            list(range(self.initial_chains + 1, p.chains + 1)), t
-                        )
-                        self.chain_strip.highlight_color = fancy.CHSV(0.9, 1.0, 1.0)
-                        self.chain_strip.highlight_speed = 10
-                    else:
-                        self.chain_strip.clear_highlight()
+                    self.chain_strip.speed = CHAIN_INTERACTIVE_SPEED
+                    self.chain_strip.set_value(p.chains, t)
+                else:
+                    self.app.start_transition(t, App.STATE_MAIN)
 
         for (x, y) in up:
-            if (
-                self.button_strip.highlight != None
-                and (x, y) == self.button_strip.highlight[0]
-            ):
-                self.button_strip.clear_highlight()
+            if x == self.decrement_button and y == 3:
                 self.chain_bg_strip.dirty = True
                 self.chain_strip.dirty = True
                 try:
                     self.events.remove_task("decrement_chain")
                 except KeyError:
-                    print("DECREASE CHAINS?")
+                    # If we key error, it means that the decrement_chain went off
                     p.decrease_chains()
                     self.chain_strip.set_value(p.chains)
                     self.chain_strip.clear_highlight()
                     self.chain_bg_strip.dirty = True
                     self.events.add_task("exit", 0.75)
-
-            if x == 0 or x == 7:
-                self.player_strip.highlight = None
-                self.app.start_transition(t, App.STATE_MAIN)
+            else:
+                self.events.add_task("exit", 2.5, t)
 
     def dispatch_event(self, t, event):
         if event == "decrement_chain":

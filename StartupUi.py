@@ -55,6 +55,7 @@ class StartupUi(UiModule):
 
     def enter(self, t):
         self.center_strip.speed = 0.1
+        self.center_strip.set_value(12, t, now=True)
 
     def leave(self, t):
         self.center_strip.speed = 0.05

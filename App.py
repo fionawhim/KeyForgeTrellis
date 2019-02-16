@@ -1,4 +1,5 @@
 import time
+import math
 
 from MainUi import MainUi
 import Player
@@ -9,8 +10,11 @@ from StartupUi import StartupUi
 
 from EventQueue import EventQueue
 
-SIXTY_FPS = 1 / 60.0
+TARGET_FPS = 1 / 30.0
 KEY_CHECK_INTERVAL = 0.025
+
+SHAKE_THRESHOLD = 4.0
+FLIP_THRESHOLD = 8
 
 STATE_STARTUP = 0
 STATE_MAIN = 1
@@ -19,8 +23,10 @@ STATE_EDIT_CHAINS = 3
 
 
 class App:
-    def __init__(self, trellis):
+    def __init__(self, trellis, accelerometer):
         self.trellis = trellis
+        self.accelerometer = accelerometer
+
         self.players = [
             Player.Player(Player.SIDE_LEFT),
             Player.Player(Player.SIDE_RIGHT),
@@ -30,6 +36,7 @@ class App:
 
         self.events = EventQueue()
         self.pressed = set()
+        self.axis_reading = [ None, None, None ]
 
         self.state = None
         self.transitioning = False
@@ -87,7 +94,7 @@ class App:
                 else:
                     break
 
-            if t >= last_pressed_t + KEY_CHECK_INTERVAL:
+            if t >= last_pressed_t + KEY_CHECK_INTERVAL and not self.transitioning:
                 pressed = set(self.trellis.pressed_keys)
 
                 down = pressed - self.pressed
@@ -97,6 +104,24 @@ class App:
                     m.handle_keys(t, pressed=pressed, down=down, up=up)
 
                 self.pressed = pressed
+
+                """Detect when the Trellis is shaken.
+                See http://www.profoundlogic.com/docs/display/PUI/Accelerometer+Test+for+Shaking
+                TL;DR one or more axis experiences a significant (set by bound) change very quickly
+                Returns whether a shake was detected.
+                """
+                shaken = False
+                x, y, z = self.accelerometer.acceleration
+                if self.axis_reading[0] is not None:
+                    shaken = (math.fabs(self.axis_reading[0] - x) > SHAKE_THRESHOLD and
+                                math.fabs(self.axis_reading[1] - y) > SHAKE_THRESHOLD and
+                                math.fabs(self.axis_reading[2] - z) > SHAKE_THRESHOLD)
+                self.axis_reading = (x, y, z)
+                if shaken:
+                    self.start_transition(t, STATE_MAIN)
+                elif z > FLIP_THRESHOLD:
+                    self.start_transition(t, STATE_STARTUP)
+                
                 last_pressed_t = t
 
             for m in modules:
@@ -104,8 +129,8 @@ class App:
             self.trellis.pixels.show()
 
             t_diff = time.monotonic() - t
-            if t_diff < SIXTY_FPS:
-                time.sleep(SIXTY_FPS - t_diff)
+            if t_diff < TARGET_FPS:
+                time.sleep(TARGET_FPS - t_diff)
 
             fps = fps + 1
 
@@ -119,7 +144,7 @@ class App:
         self.start_transition(t, STATE_EDIT_CHAINS)
 
     def start_transition(self, t, new_state):
-        if self.transitioning:
+        if self.transitioning or new_state == self.state:
             return
 
         self.transitioning = True

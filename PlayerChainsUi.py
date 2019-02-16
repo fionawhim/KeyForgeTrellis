@@ -44,6 +44,7 @@ class PlayerChainsUi(UiModule):
 
     def enter(self, t):
         self.strip.highlight = None
+        self.strip.dirty = True
         self.update_strip(t)
 
     def leave(self, t):
