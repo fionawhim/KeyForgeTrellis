@@ -14,16 +14,17 @@ class PlayerChainsUi(UiModule):
         self.player = player
 
         if player.side == Player.SIDE_LEFT:
-            self.x_range = range(4)
+            self.x_range = range(1)
         else:
-            self.x_range = range(7, 3, -1)
+            self.x_range = range(7, 8)
 
         self.strip = LightStrip(
             pixels=trellis.pixels,
             x_range=self.x_range,
-            y_range=range(3, 4),
+            y_range=range(3, -1, -1),
             colors=palettes.CHAINS,
             speed=0.1,
+            brightness=0.1,
             value=0,
         )
 
@@ -52,16 +53,18 @@ class PlayerChainsUi(UiModule):
         return 0.5
 
     def update_strip(self, t=None):
-        if self.player.chains == 0:
-            self.strip.set_value(0, t)
-        elif self.player.chains <= 6:
-            self.strip.set_value(1, t)
-        elif self.player.chains <= 12:
-            self.strip.set_value(2, t)
-        elif self.player.chains <= 18:
-            self.strip.set_value(3, t)
-        else:
-            self.strip.set_value(4, t)
+        self.strip.set_value(4, t)
+        pass
+        # if self.player.chains == 0:
+        #     self.strip.set_value(0, t)
+        # elif self.player.chains <= 6:
+        #     self.strip.set_value(1, t)
+        # elif self.player.chains <= 12:
+        #     self.strip.set_value(2, t)
+        # elif self.player.chains <= 18:
+        #     self.strip.set_value(3, t)
+        # else:
+        #     self.strip.set_value(4, t)
 
     def dispatch_event(self, t, event):
         if event == "update_strip":

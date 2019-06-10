@@ -37,6 +37,8 @@ class PlayerKeyUi(UiModule):
             ),
         ]
 
+        self.strips = []
+
         self.update_strips(None)
 
     def render(self, t):
